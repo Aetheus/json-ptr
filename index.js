@@ -301,6 +301,43 @@
     return it;
   }
 
+  function deleteValueAtPath(target, path) {
+    var it;
+    var len;
+    var end;
+    var cursor;
+    var step;
+    var nonexistent;
+    var deleted = true;
+    if (path.length === 0) {
+      throw new Error('Cannot delete the root object.');
+    }
+    if (typeof target === 'undefined') {
+      throw new TypeError('Cannot delete values on undefined');
+    }
+    it = target;
+    len = path.length;
+    end = path.length - 1;
+    cursor = -1;
+    if (len) {
+      while (++cursor < len && it) {
+        step = path[cursor];
+          if (cursor === end) {
+            if (Array.isArray(it) && isFinite(step)) {
+              it.splice(step, 1);
+            } else {
+              delete it[step];
+            }
+
+            return deleted;
+          }
+          it = it[step];
+      }
+    }
+    return nonexistent;
+  }
+
+
   function looksLikeFragment(ptr) {
     return ptr && ptr.length && ptr[0] === '#';
   }
@@ -327,6 +364,12 @@
         enumerable: true,
         value: function (target, value, force) {
           return setValueAtPath(target, value, localPath, force);
+        }
+      },
+      delete: {
+        enumerable: true,
+        value: function (target) {
+          return deleteValueAtPath(target, localPath);
         }
       },
       has: {
@@ -483,6 +526,10 @@
   JsonPointer.set = function (target, ptr, val, force) {
     return setValueAtPath(target, val, pickDecoder(ptr)(ptr), force);
   };
+
+  JsonPointer.delete = function (target, ptr) {
+    return deleteValueAtPath(target, pickDecoder(ptr)(ptr));
+  }
 
   JsonPointer.list = function (target, fragmentId) {
     var res = [];
